@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Editar – {{ pessoa.nome }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card p-4">
+      <h4 class="fw-bold mb-4"><i class="bi bi-pencil-square me-2 text-warning"></i>Editar Cadastro</h4>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.nome.label }}</label>
+          {{ form.nome }}
+          {% if form.nome.errors %}
+            <div class="text-danger small mt-1">{{ form.nome.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.cpf.label }}</label>
+          {{ form.cpf }}
+          {% if form.cpf.errors %}
+            <div class="text-danger small mt-1">{{ form.cpf.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.foto.label }}</label>
+          {% if pessoa.foto %}
+            <div class="mb-2">
+              <img src="{{ pessoa.foto.url }}" id="previewImg"
+                   class="img-thumbnail" style="max-height:180px;">
+              <div class="text-muted small mt-1">Foto atual. Selecione outra para substituir.</div>
+            </div>
+          {% else %}
+            <img id="previewImg" src="#" class="img-thumbnail d-none" style="max-height:180px;">
+          {% endif %}
+          {{ form.foto }}
+          {% if form.foto.errors %}
+            <div class="text-danger small mt-1">{{ form.foto.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-warning flex-fill">
+            <i class="bi bi-floppy me-1"></i>Salvar Alterações
+          </button>
+          <a href="{% url 'lista_pessoas' %}" class="btn btn-outline-secondary flex-fill">
+            <i class="bi bi-x-circle me-1"></i>Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('id_foto').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.getElementById('previewImg');
+        img.src = e.target.result;
+        img.classList.remove('d-none');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
+{% endblock %}

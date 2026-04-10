@@ -1,0 +1,220 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Cadastrar Pessoa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card p-4">
+      <h4 class="fw-bold mb-4"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Cadastrar Pessoa</h4>
+      <form method="post" enctype="multipart/form-data" id="cadastroForm">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.nome.label }}</label>
+          {{ form.nome }}
+          {% if form.nome.errors %}
+            <div class="text-danger small mt-1">{{ form.nome.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.cpf.label }}</label>
+          {{ form.cpf }}
+          {% if form.cpf.errors %}
+            <div class="text-danger small mt-1">{{ form.cpf.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Foto (com rosto visível)</label>
+
+          <!-- Abas -->
+          <ul class="nav nav-tabs mb-3" id="fotoTabs">
+            <li class="nav-item">
+              <button class="nav-link active" id="tab-upload" type="button">
+                <i class="bi bi-upload me-1"></i>Enviar Arquivo
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="tab-camera" type="button">
+                <i class="bi bi-camera-video me-1"></i>Usar Câmera
+              </button>
+            </li>
+          </ul>
+
+          <!-- Upload -->
+          <div id="painel-upload">
+            {{ form.foto }}
+            {% if form.foto.errors %}
+              <div class="text-danger small mt-1">{{ form.foto.errors }}</div>
+            {% endif %}
+            <div id="previewWrapper" class="mt-2 text-center d-none">
+              <img id="previewImg" src="#" alt="Preview" class="img-thumbnail" style="max-height:200px;">
+            </div>
+          </div>
+
+          <!-- Câmera -->
+          <div id="painel-camera" class="d-none text-center">
+            <div class="position-relative d-inline-block w-100 mb-2">
+              <video id="camVideo" autoplay playsinline muted
+                     class="w-100 rounded border" style="max-height:260px; background:#000; object-fit:cover;"></video>
+            </div>
+            <canvas id="camCanvas" class="d-none"></canvas>
+
+            <div class="d-flex gap-2 justify-content-center mb-2">
+              <button type="button" id="btnAbrirCam" class="btn btn-sm btn-success">
+                <i class="bi bi-play-fill me-1"></i>Iniciar Câmera
+              </button>
+              <button type="button" id="btnCapturar" class="btn btn-sm btn-primary d-none">
+                <i class="bi bi-camera me-1"></i>Capturar Foto
+              </button>
+              <button type="button" id="btnRecapturar" class="btn btn-sm btn-outline-secondary d-none">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Repetir
+              </button>
+            </div>
+
+            <div id="camPreviewWrapper" class="d-none">
+              <img id="camPreviewImg" src="#" alt="Captura"
+                   class="img-thumbnail" style="max-height:200px;">
+              <div class="text-success small mt-1">
+                <i class="bi bi-check-circle me-1"></i>Foto capturada! Clique em Salvar para continuar.
+              </div>
+            </div>
+            <p id="camStatus" class="text-muted small mt-1">Clique em "Iniciar Câmera" para começar.</p>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary flex-fill">
+            <i class="bi bi-floppy me-1"></i>Salvar
+          </button>
+          <a href="{% url 'lista_pessoas' %}" class="btn btn-outline-secondary flex-fill">
+            <i class="bi bi-x-circle me-1"></i>Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // --- CPF mask ---
+  document.getElementById('id_cpf').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    this.value = v;
+  });
+
+  // --- Upload preview ---
+  document.getElementById('id_foto').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('previewWrapper').classList.remove('d-none');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // --- Tabs ---
+  const tabUpload = document.getElementById('tab-upload');
+  const tabCamera = document.getElementById('tab-camera');
+  const painelUpload = document.getElementById('painel-upload');
+  const painelCamera = document.getElementById('painel-camera');
+  let camStream = null;
+
+  tabUpload.addEventListener('click', () => {
+    tabUpload.classList.add('active');
+    tabCamera.classList.remove('active');
+    painelUpload.classList.remove('d-none');
+    painelCamera.classList.add('d-none');
+    pararCamera();
+  });
+
+  tabCamera.addEventListener('click', () => {
+    tabCamera.classList.add('active');
+    tabUpload.classList.remove('active');
+    painelCamera.classList.remove('d-none');
+    painelUpload.classList.add('d-none');
+  });
+
+  // --- Camera ---
+  const video = document.getElementById('camVideo');
+  const canvas = document.getElementById('camCanvas');
+  const btnAbrirCam = document.getElementById('btnAbrirCam');
+  const btnCapturar = document.getElementById('btnCapturar');
+  const btnRecapturar = document.getElementById('btnRecapturar');
+  const camPreviewWrapper = document.getElementById('camPreviewWrapper');
+  const camPreviewImg = document.getElementById('camPreviewImg');
+  const camStatus = document.getElementById('camStatus');
+
+  btnAbrirCam.addEventListener('click', async () => {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      video.srcObject = camStream;
+      video.classList.remove('d-none');
+      btnAbrirCam.classList.add('d-none');
+      btnCapturar.classList.remove('d-none');
+      camPreviewWrapper.classList.add('d-none');
+      camStatus.textContent = 'Posicione seu rosto e clique em Capturar Foto.';
+    } catch (err) {
+      camStatus.textContent = 'Erro ao acessar câmera: ' + err.message;
+    }
+  });
+
+  btnCapturar.addEventListener('click', () => {
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    canvas.toBlob(blob => {
+      // Inject into file input
+      const file = new File([blob], 'captura_camera.jpg', { type: 'image/jpeg' });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      document.getElementById('id_foto').files = dt.files;
+
+      // Show preview
+      camPreviewImg.src = URL.createObjectURL(blob);
+      camPreviewWrapper.classList.remove('d-none');
+      video.classList.add('d-none');
+      btnCapturar.classList.add('d-none');
+      btnRecapturar.classList.remove('d-none');
+      camStatus.textContent = '';
+      pararCamera();
+    }, 'image/jpeg', 0.92);
+  });
+
+  btnRecapturar.addEventListener('click', async () => {
+    camPreviewWrapper.classList.add('d-none');
+    btnRecapturar.classList.add('d-none');
+    video.classList.remove('d-none');
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      video.srcObject = camStream;
+      btnCapturar.classList.remove('d-none');
+      camStatus.textContent = 'Posicione seu rosto e clique em Capturar Foto.';
+    } catch (err) {
+      camStatus.textContent = 'Erro: ' + err.message;
+    }
+  });
+
+  function pararCamera() {
+    if (camStream) {
+      camStream.getTracks().forEach(t => t.stop());
+      camStream = null;
+    }
+  }
+
+  // Parar câmera ao submeter ou sair da página
+  document.getElementById('cadastroForm').addEventListener('submit', pararCamera);
+  window.addEventListener('beforeunload', pararCamera);
+</script>
+{% endblock %}

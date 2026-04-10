@@ -1,0 +1,53 @@
+{% extends 'core/base.html' %}
+
+{% block title %}FaceID – Início{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 text-center mb-5">
+    <div class="py-5">
+      <i class="bi bi-person-bounding-box display-1 text-primary mb-3 d-block"></i>
+      <h1 class="display-5 fw-bold">Sistema de Reconhecimento Facial</h1>
+      <p class="lead text-muted">Cadastre pessoas e identifique rostos em tempo real com a câmera.</p>
+      <span class="badge bg-secondary fs-6 px-3 py-2">
+        <i class="bi bi-people-fill me-1"></i>{{ total }} pessoa{{ total|pluralize:"s" }} cadastrada{{ total|pluralize:"s" }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-md-4">
+    <div class="card h-100 text-center p-4">
+      <i class="bi bi-person-plus-fill display-4 text-success mb-3"></i>
+      <h5 class="fw-bold">Cadastrar Pessoa</h5>
+      <p class="text-muted small">Registre uma nova pessoa com nome, CPF e foto contendo o rosto visível.</p>
+      <a href="{% url 'cadastrar' %}" class="btn btn-primary mt-auto">
+        <i class="bi bi-plus-circle me-1"></i>Novo Cadastro
+      </a>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 text-center p-4">
+      <i class="bi bi-camera-video-fill display-4 text-warning mb-3"></i>
+      <h5 class="fw-bold">Reconhecer Rosto</h5>
+      <p class="text-muted small">Use a câmera para identificar automaticamente uma pessoa cadastrada no sistema.</p>
+      <a href="{% url 'reconhecer' %}" class="btn btn-warning mt-auto text-dark">
+        <i class="bi bi-camera-video me-1"></i>Abrir Câmera
+      </a>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 text-center p-4">
+      <i class="bi bi-list-ul display-4 text-info mb-3"></i>
+      <h5 class="fw-bold">Pessoas Cadastradas</h5>
+      <p class="text-muted small">Visualize todas as pessoas registradas no sistema com suas informações.</p>
+      <a href="{% url 'lista_pessoas' %}" class="btn btn-info mt-auto text-white">
+        <i class="bi bi-people me-1"></i>Ver Lista
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
